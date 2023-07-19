@@ -10,26 +10,86 @@ global tone_mapping;
 global overlap_ratio;
 sample_freq = 32e3;
 amp = 1;
-% 1 = F
-base_tone_freq = 349.23;
+% 1 = D
+base_tone_freq = 293.66;
 % beat_time = 0.5, or BPM = 120
-beat_time = 0.5;
-% 将唱名映射至以2为底的指数
-tone_mapping = [1, 3, 5, 6, 8, 10, 12];
+beat_time = 1;
+% 将唱名映射至以2^(1/12)为底的指数, 1对应指数为1
+tone_mapping = [0, 2, 4, 5, 7, 9, 11];
 
 overlap_ratio = 0.5;
 
 % 曲谱
-tone = [-3, 1, -4, 2, -5, 3, -6, 2];
-beat = [2, 2, 2, 2, 2, 2, 2, 2];
 
-music = play(tone, beat);
+bar1 = {
+    {
+        [-5,    5,      6,      -2,     1,      2,      -4,     3,      5,      -2];
+        [1,     0.5,    0.5,    1.5,    0.25,   0.25,   1.5,    0.25,   0.25,   2]
+    };
+    {
+        [-3,    -100,   1,      -100,   -2,     -100,   0];
+        [1,     1,      1.5,    0.5,    1.5,    0.5,    2]
+    };
+    {
+        [-1,    -100,   3,      -100,   0,      -100,   2];
+        [1,     1,      1.5,    0.5,    1.5,    0.5,    2]
+    };
+    {
+        [-12,   -11,    -10,    -8,     -9,     -10,    -13];
+        [1,     1,      1,      1,      1,      1,      2]
+    }
+};
 
+bar2 = {
+    {
+        [-5,    8,      6,      5,      -2,     1,      2,      -4,     5,      3,     -2];
+        [0.5,   0.5,    0.5,    0.5,    1.5,    0.25,   0.25,   1.5,    0.25,   0.25,  2]
+    };
+    {
+        [-3,    1,      -2,     0];
+        [2,     2,      2,      2]
+    };
+    {
+        [-1,    3,      0,      2];
+        [2,     2,      2,      2];
+    };
+    {
+        [-12,   -11,    -10,    -8,     -9,     -10,    -13];
+        [1,     1,      1,      1,      1,      1,      2]
+    }
+};
+
+music1 = play_multi(bar1);
+music2 = play_multi(bar2);
+
+music = [music1, music2];
+
+t = 0:1/sample_freq:(length(music) - 1)/sample_freq;
+
+tin = timeseries(music',t);
+tout = resample(tin, t);
+music = tout.Data;
 
 sound(music, sample_freq);
-plot(music(1:200));
 
-function result = play(tone, beat)
+function result = play_multi(melody)
+    result = [];
+    music = [];
+    len = length(melody);
+    for i = 1:len
+        if i == 1
+            music = play_single(melody{i}{1}, melody{i}{2});
+        else
+            music_current = play_single(melody{i}{1}, melody{i}{2}) * 1.5 / i;
+            music_len = min(length(music), length(music_current));
+            music = [music(:, 1:music_len);music_current(1:music_len)];
+        end
+    end
+    [row, col] = size(music);
+    result = ones(1, row) * music;
+end
+
+function result = play_single(tone, beat)
     
     % % 曲谱
     % tone = [5, 5, 6, 2, 1, 1, -1, 2];
@@ -78,15 +138,21 @@ function wave = gen_waveform(freq, len)
    time_step = sample_freq^(-1);
    t = 0:time_step:(len-1) * time_step;
 
-   harmonic = [1,0.2,0.3];
-   % for m = 1:length(harmonic)
-   %     if m == 1
-   %         wave = amp * sin(2 * pi * freq * t);
-   %     else
-   %         wave = wave + harmonic(m) * amp * sin(2 * pi * m * freq * t);
-   %     end
-   % end
-   wave = amp * square(2 * pi * freq * t);
+
+
+   if (freq == -1)
+       wave = 0 * square(2 * pi * freq * t);
+   else
+       harmonic = [1, 0.2, 0.1, 0.1, 0.1, 0.2];
+       for m = 1:length(harmonic)
+           if m == 1
+               wave = amp * sin(2 * pi * freq * t);
+           else
+               wave = wave + harmonic(m) * amp * sin(2 * pi * m * freq * t);
+           end
+       end
+       % wave = amp * sawtooth(2 * pi * freq * t, 0.5);
+   end
 end
 
 function [freq, width] = trans_freq_width(tone, beat)
@@ -94,9 +160,13 @@ function [freq, width] = trans_freq_width(tone, beat)
     global beat_time;
     global tone_mapping;
 
-    remain = mod(tone, 7);
-    exponent = tone_mapping(remain) + (tone - remain)/7 * 12;
-    freq = base_tone_freq * (2^((exponent - 1)/12));
+    if (tone == -100) 
+        freq = -1;
+    else 
+        remain = mod(tone - 1, 7) + 1;
+        exponent = tone_mapping(remain) + (tone - remain)/7 * 12;
+        freq = base_tone_freq * (2^((exponent)/12));
+    end
     width = beat * beat_time;
 end
 
@@ -107,9 +177,9 @@ function [y0, y1, y2, y3] = generate_fixed(width)
     
     time_step = sample_freq^(-1);
 
-    t0 = 0:time_step:beat_time * 0.1;
-    t1 = 0:time_step:beat_time * 0.1;
-    t3 = 0:time_step:beat_time * 0.2;
+    t0 = 0:time_step:beat_time * 0.05;
+    t1 = 0:time_step:beat_time * 0.05;
+    t3 = 0:time_step:beat_time * 0.1;
     width = width - t0(end) - t1(end) - t3(end) * (1 - overlap_ratio);
     t2 = 0:time_step:(width);
     
