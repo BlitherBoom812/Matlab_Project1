@@ -17,7 +17,7 @@ tone = [5, 5, 6, 2, 1, 1, -1, 2];
 beat = [1, 0.5, 0.5, 2, 1, 0.5, 0.5, 2];
 
 first_part = cell2mat(arrayfun(@(x, y) gen_tune(x, y), tone, beat, UniformOutput=false));
-sound(first_part);
+sound(first_part, sample_freq);
 
 function y = gen_tune(tone, beat)
     [freq, width] = trans_freq_width(tone, beat);
