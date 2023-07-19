@@ -17,7 +17,7 @@ beat_time = 0.5;
 % 将唱名映射至以2为底的指数
 tone_mapping = [1, 3, 5, 7, 8, 10, 12];
 
-overlap_ratio = 0.9;
+overlap_ratio = 0.5;
 % 曲谱
 tone = [5, 5, 6, 2, 1, 1, -1, 2];
 beat = [1, 0.5, 0.5, 2, 1, 0.5, 0.5, 2];
@@ -78,19 +78,20 @@ end
 function [y0, y1, y2, y3] = generate_fixed(width)
     global sample_freq;
     global beat_time;
+    global overlap_ratio;
     
     time_step = sample_freq^(-1);
 
-    t0 = 0:time_step:beat_time * 0.2;
-    t1 = 0:time_step:beat_time * 0.2;
-    t3 = 0:time_step:beat_time * 0.8;
-
-    t2 = 0:time_step:(width * 0.5);
+    t0 = 0:time_step:beat_time * 0.1;
+    t1 = 0:time_step:beat_time * 0.1;
+    t3 = 0:time_step:beat_time * 0.2;
+    width = width - t0(end) - t1(end) - t3(end) * (1 - overlap_ratio);
+    t2 = 0:time_step:(width);
     
     [unused, y0] = exponential_envelop(t0, 0, 1, -5);
     [unused, y1] = exponential_envelop(t1, 1, 0.9, -5);    
     [unused, y2] = exponential_envelop(t2, 0.9, 0.9, 1);
-    [unused, y3] = exponential_envelop(t3, 0.9, 0, -10);   
+    [unused, y3] = exponential_envelop(t3, 0.9, 0, -2);   
 end
 
 
