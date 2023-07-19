@@ -15,7 +15,7 @@ base_tone_freq = 349.23;
 % beat_time = 0.5, or BPM = 120
 beat_time = 0.5;
 % 将唱名映射至以2为底的指数
-tone_mapping = [1, 3, 5, 7, 8, 10, 12];
+tone_mapping = [1, 3, 5, 6, 8, 10, 12];
 
 overlap_ratio = 0.5;
 % 曲谱

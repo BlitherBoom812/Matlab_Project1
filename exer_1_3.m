@@ -17,17 +17,17 @@ base_tone_freq = 349.23;
 % beat_time = 0.5, or BPM = 120
 beat_time = 0.5;
 % 将唱名映射至以2为底的指数
-tone_mapping = [1, 3, 5, 7, 8, 10, 12];
+tone_mapping = [1, 3, 5, 6, 8, 10, 12];
 
 overlap_ratio = 0.5;
 
 music = get_dfh();
 % sound(music, sample_freq)
 
-% 升八度
-sound(music, sample_freq * 2)
-% 降八度
-sound(music, sample_freq / 2)
+% % 升八度
+% sound(music, sample_freq * 2)
+% % 降八度
+% sound(music, sample_freq / 2)
 % 升半音
 tsin = timeseries(music', 1:length(music));
 tsout = resample(tsin, 1:(2^(1/12)):length(music));
