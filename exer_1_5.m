@@ -7,16 +7,12 @@ global sample_freq;
 global base_tone_freq;
 global beat_time;
 
-sample_freq = 32e3;
+sample_freq = 8e3;
 
 % 1 = D
 base_tone_freq = 293.66;
 % beat_time = 0.5, or BPM = 120
-beat_time = 1;
-
-
-
-
+beat_time = 1.2;
 
 % 曲谱
 
@@ -45,12 +41,12 @@ bar2 = {
         [0.5,   0.5,    0.5,    0.5,    1.5,    0.25,   0.25,   1.5,    0.25,   0.25,  2]
     };
     {
-        [-3,    1,      -2,     0];
-        [2,     2,      2,      2]
+        [-3,    -100,       1,      -100      -2,   -100,   0];
+        [0.5,   1.5,        1.5,    0.5,      1.5,  0.5,    2]
     };
     {
-        [-1,    3,      0,      2];
-        [2,     2,      2,      2];
+        [-1,    -100,       3,      -100,     0,    -100,   2];
+        [0.5,   1.5,        1.5,    0.5,      1.5,  0.5,    2]
     };
     {
         [-12,   -11,    -10,    -8,     -9,     -10,    -13];
@@ -79,7 +75,7 @@ function result = play_multi(melody)
         if i == 1
             music = play_single(melody{i}{1}, melody{i}{2});
         else
-            music_current = play_single(melody{i}{1}, melody{i}{2}) / i;
+            music_current = play_single(melody{i}{1}, melody{i}{2});
             music_len = min(length(music), length(music_current));
             music = [music(:, 1:music_len);music_current(1:music_len)];
         end

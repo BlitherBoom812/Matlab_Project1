@@ -30,7 +30,7 @@ function wave = gen_waveform(freq, len)
    if (freq == -1)
        wave = 0 * square(2 * pi * freq * t);
    else
-       harmonic = [1, 0.2, 0.1, 0.1, 0.1, 0.2];
+       harmonic = [1, 0.1, 0.1, 0.1, 0.1, 0.3];
        for m = 1:length(harmonic)
            if m == 1
                wave = amp * sin(2 * pi * freq * t);
@@ -52,7 +52,7 @@ function [freq, width] = trans_freq_width(tone, beat)
     else 
         remain = mod(tone - 1, 7) + 1;
         exponent = tone_mapping(remain) + (tone - remain)/7 * 12;
-        freq = base_tone_freq * (2^((exponent)/12));
+        freq = base_tone_freq * (2^(exponent/12));
     end
     width = beat * beat_time;
 end
