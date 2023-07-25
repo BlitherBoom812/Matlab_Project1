@@ -3,15 +3,15 @@ close all;
 clc;
 fs = 8000;
 % load 命令载入附件光盘中的数据文件“guitar.mat”
-load('音乐合成所需资源\Guitar.Mat')
+load('音乐合成所需资源\Guitar.MAT');
 l = length(realwave);
 t = (0:1/fs:((l-1)/fs))';
 figure;
-subplot(1, 2, 1);
+subplot(2, 1, 1);
 plot(t, realwave);
 title("realwave");
 
-subplot(1, 2, 2);
+subplot(2, 1, 2);
 plot(t, wave2proc);
 title('wave2proc');
 
