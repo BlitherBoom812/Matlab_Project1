@@ -2,7 +2,7 @@ clear;
 close all;
 clc;
 fs = 8000;
-part_div = 5;
+part_div = 10;
 load('音乐合成所需资源\Guitar.MAT');
 l = length(realwave);
 % resample
@@ -20,7 +20,7 @@ end
 % take average
 res = res / part_div;
 % repeat & resample
-avg_rsmp = repmat(res, part_div);
+avg_rsmp = repmat(res, part_div, 1);
 rsmp_final = resample(avg_rsmp, 1, part_div);
 % plot
 figure;
