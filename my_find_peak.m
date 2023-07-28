@@ -1,4 +1,4 @@
-function peak_x = my_find_peak(y, threshold_ratio, threshold_interval, fs)
+function [peak_x, prev_valley_x] = my_find_peak(y, threshold_ratio, threshold_interval, fs)
     % 被确定为峰值的条件：该极大值必须与前一个极小值的比值大于 threshold_ratio，或者它前面没有极小值；距离该极大值点
     % threshold_interval 范围内没有比它更大的极大值。
 
@@ -6,7 +6,7 @@ function peak_x = my_find_peak(y, threshold_ratio, threshold_interval, fs)
     debug = false;
 
     peak_x = [];
-
+    prev_valley_x = [];
     % 计算极大值和极小值
     maxima = islocalmax(y);
     minima = islocalmin(y);
@@ -16,6 +16,10 @@ function peak_x = my_find_peak(y, threshold_ratio, threshold_interval, fs)
         disp(['maxi num: ', num2str(length(maxima_x))]);
     end
     
+    % 添加第一个最低点
+    [~, min_idx] = min(y(1:maxima_x(1)));
+    prev_valley_x = cat_element(prev_valley_x, min_idx(end));
+
     % 遍历极大值点
     for i = 1:length(maxima_x)
         maxima_xi = maxima_x(i);
@@ -35,6 +39,7 @@ function peak_x = my_find_peak(y, threshold_ratio, threshold_interval, fs)
             if (ratio > threshold_ratio)
                 if y(maxima_xi) >= interval_max_y
                     peak_x = cat_element(peak_x, maxima_xi);
+                    prev_valley_x = cat_element(prev_valley_x, prev_min_index);
                 elseif ratio > threshold_ratio
                     if debug
                         fprintf("x = %f, y = %f, prev_min_x = %f, prev_min_y = %f, ratio = %f, interval_max_x = %f,interval_max_y = %f, interval = %f\n", maxima_xi/fs, y(maxima_xi), prev_min_index/fs, y(prev_min_index), ratio, interval_max_x / fs, interval_max_y, abs(interval_max_x - maxima_xi) / fs);
@@ -54,6 +59,10 @@ function peak_x = my_find_peak(y, threshold_ratio, threshold_interval, fs)
             end
         end
     end
+    % 再加上末尾的最低点
+    [~, min_idx] = min(y(maxima_x(end):end));
+    min_idx = maxima_x(end) - 1 + min_idx;
+    prev_valley_x = cat_element(prev_valley_x, min_idx(1));
 end
 
 function y = cat_element(list, x)
