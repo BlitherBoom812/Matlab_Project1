@@ -22,6 +22,11 @@ end
 function y = gen_tune_from_freq_width(freq, width)
     global sample_freq;
     global amp;
+    global tone_mapping;
+    amp = 1;
+    % 将唱名映射至以2^(1/12)为底的指数, 1对应指数为1
+    tone_mapping = [0, 2, 4, 5, 7, 9, 11];
+
     time_step = sample_freq^(-1);
     t = 0:time_step:width;
     y = amp * sin(2 * pi * freq * t);
