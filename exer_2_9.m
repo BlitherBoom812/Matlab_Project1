@@ -12,6 +12,7 @@ for i = 1:2
     [env, ~] = envelope(env, 90,'peak');
 end
 env = max(env, 0.0026);
+
 figure(1);
 subplot(3, 1, 1);
 plot_wave(fmt);
@@ -28,45 +29,42 @@ t = plot_wave_t(env, fs);
 plot(t(peaks), env(peaks), 'o', 'MarkerSize', 5, 'MarkerFaceColor', 'none', 'Color', 'red');
 plot(t(valleys), env(valleys), 'x', 'MarkerSize', 5, 'MarkerFaceColor', 'none', 'Color', 'blue');
 title('envelope');
- 
-fprintf("节拍个数： %d\n", length(peaks));
 
+fprintf("节拍个数： %d\n", length(peaks));
 
 figure("Position", [20, 20, 1200, 800]);
 
 try
     
     h = waitbar(0, '分析音调...');
-    
+    % 用于保存音调数据
+    harmonic_mapping = {};
+    tone_num = 1;
     for i = 1:length(peaks)
         t = plot_wave_t(fmt, fs);
         tone = fmt(valleys(i):valleys(i + 1));
         tone = tone(1:round(length(tone) * 0.8));
         tone = tone .* gausswin(length(tone));
-        % tone = resample(tone, 10, 1);
-        % tone = resample(tone, 1, 10);
         for j = 1:10
             tone = [tone;tone];
         end
-    
+        % 频域变换（只取正值）
         Tone = abs(fftshift(fft(tone)));
         f = linspace(-fs/2, fs/2, length(Tone));
         Tone = Tone(f > 0);
         f = f(f > 0);
-    
+        % 求峰值
         [max_amp, max_idx] = max(Tone);
         [peak_freq_amp, peak_freq_index] = findpeaks(Tone);
-        
         ths = 0.3;
-        % filtered_amp = peak_freq_amp(peak_freq_amp / max_amp > ths);
         peak_filtered_index = peak_freq_index(peak_freq_amp / max_amp > ths);
     
         % 暴力搜索
-        search_harmonic_amp = peak_filtered_index(peak_filtered_index <= max_idx);
+        search_harmonic_idx = peak_filtered_index(peak_filtered_index <= max_idx);
         base_freq_idx = max_idx;
         search_valid = false;
         ths2 = 0.025;
-        search_result = search_harmonic_amp(abs(round(max_idx ./ search_harmonic_amp) - max_idx ./ search_harmonic_amp) < ths2);
+        search_result = search_harmonic_idx(abs(round(max_idx ./ search_harmonic_idx) - max_idx ./ search_harmonic_idx) < ths2);
         if (~isempty(search_result))
             max_int = max(round(max_idx ./ search_result));
             search_result = search_result(abs(max_int - max_idx ./ search_result) < ths2);
@@ -79,20 +77,24 @@ try
         base_freq = f(base_freq_idx);
         [tone_name, standard_freq] = get_tune_name(base_freq);
         info = '';
+
         if search_valid
             fprintf("节拍 \t%d 的基频为 \t%f Hz, 对应的音名为 \t%s\t（频率 \t%f Hz）\n", i, base_freq, tone_name, standard_freq);
+
             info = sprintf("Freq = %f Hz(%s)", base_freq, tone_name);
             % 检测谐波强度（正负0.1附近）
             boundary = 0.1;
             harmonic_idxs = [];
             harmonic_amps = [];
             harmonic_mults = [];
+            save_harmonic_amps = [];
+
             for j = 2:9
                 harmonic_freq_idx = j * base_freq_idx;
                 start = round(harmonic_freq_idx * (1 - boundary));
                 stop = min(round(harmonic_freq_idx * (1 + boundary)), length(peak_freq_amp));
-                search_harmonic_amp = Tone(start:stop);
-                [max_harmonic_amp, max_harmonic_idx] = max(search_harmonic_amp);
+                search_harmonic_idx = Tone(start:stop);
+                [max_harmonic_amp, max_harmonic_idx] = max(search_harmonic_idx);
                 max_harmonic_idx = start - 1 + max_harmonic_idx;
                 % 归一化
                 max_harmonic_amp = max_harmonic_amp / Tone(base_freq_idx);
@@ -100,15 +102,40 @@ try
                     harmonic_amps = [harmonic_amps, max_harmonic_amp];
                     harmonic_idxs = [harmonic_idxs, max_harmonic_idx];
                     harmonic_mults = [harmonic_mults, j];
+                    save_harmonic_amps = [save_harmonic_amps, max_harmonic_amp];
+                else
+                    save_harmonic_amps = [save_harmonic_amps, 0];
                 end
             end
+
             for j = 1:length(harmonic_mults)
                 disp(['* 含有', num2str(harmonic_mults(j)), '倍的谐波分量(', num2str(f(harmonic_idxs(j))),' Hz)，幅度（相对基频）为', num2str(harmonic_amps(j))]);
             end
+            
+            % harmonic_mapping记录
+            exist_key = false;
+            exist_idx = 0;
+            for j = 1:length(harmonic_mapping)
+                if harmonic_mapping{j}{1} == tone_name
+                    exist_key = true;
+                    exist_idx = j;
+                    break;
+                end
+            end
+
+            if exist_key
+                harmonic_mapping{exist_idx}{3} = harmonic_mapping{exist_idx}{3} + save_harmonic_amps;
+                harmonic_mapping{exist_idx}{4} = harmonic_mapping{exist_idx}{4} + 1;
+            else
+                harmonic_mapping{tone_num} = {tone_name, base_freq, save_harmonic_amps, 1};
+                tone_num = tone_num + 1;
+            end
+
         else
             fprintf("节拍 \t%d 的基频未搜到！\n", i);
         end
 
+        % 绘图设置
         waitbar(i/length(peaks), h, sprintf('分析音调... %d%%', round(i/length(peaks) * 100)));
         subplot(5, 6, i);
         plot(f, Tone);
@@ -117,7 +144,12 @@ try
         xlabel('freq/Hz', 'FontSize', 5);
         ylabel('Amp', 'FontSize', 5);
     end
-    
+
+    % 对harmonic_mapping中音名相同者取平均值
+    for i = 1:length(harmonic_mapping)
+        harmonic_mapping{i}{3} = harmonic_mapping{i}{3} / harmonic_mapping{i}{4};
+    end
+    save("harmonics.mat", "harmonic_mapping", '-mat');
     close(h);
 catch exception
     % Code to handle the error
@@ -126,6 +158,7 @@ catch exception
     disp('An error occurred.');
     rethrow(exception);
 end
+
 function [tone, standard_f] = get_tune_name(base_f)
     % 定义音调值与音名的对应关系
     % 大字组音名用大写字母表示，小字组用小写字母表示，组号用数字表示，例如'a'表示小字组的A（按照教材写法为A0），'B1'表示大字一组的B。
@@ -164,4 +197,79 @@ end
 
 function t = plot_wave_t(wave, fs)
     t = (0:1/fs:((length(wave) - 1) / fs))';
+end
+
+function [peak_x, prev_valley_x] = my_find_peak(y, threshold_ratio, threshold_interval, fs)
+    % 被确定为峰值的条件：该极大值必须与前一个极小值的比值大于 threshold_ratio，或者它前面没有极小值；距离该极大值点
+    % threshold_interval 范围内没有比它更大的极大值。
+
+    % config
+    debug = false;
+
+    peak_x = [];
+    prev_valley_x = [];
+    % 计算极大值和极小值
+    maxima = islocalmax(y);
+    minima = islocalmin(y);
+    maxima_x = find(maxima);
+    if debug
+        fprintf("ratio = %f, interval = %f\n", threshold_ratio, threshold_interval);
+        disp(['maxi num: ', num2str(length(maxima_x))]);
+    end
+    
+    % 添加第一个最低点
+    [~, min_idx] = min(y(1:maxima_x(1)));
+    prev_valley_x = cat_element(prev_valley_x, min_idx(end));
+
+    % 遍历极大值点
+    for i = 1:length(maxima_x)
+        maxima_xi = maxima_x(i);
+        % 找到在当前极大值点之前且离它最近的第一个极小值
+        prev_min_index = find(minima(1:maxima_xi-1), 1, 'last');
+        % 区间内峰值最大值
+        % 在区间内找到极大值
+        [peaks, peak_locations] = findpeaks(y(max(maxima_xi - threshold_interval + 1, 1):maxima_xi + threshold_interval));
+        
+        % 找到极大值最大的点
+        [interval_max_y, max_peak_index] = max(peaks);
+        interval_max_x = peak_locations(max_peak_index) + maxima_xi - threshold_interval;
+        
+        % 判断比值和间隔是否满足阈值条件
+        if ~isempty(prev_min_index)
+            ratio = y(maxima_xi) / y(prev_min_index);
+            if (ratio > threshold_ratio)
+                if y(maxima_xi) >= interval_max_y
+                    peak_x = cat_element(peak_x, maxima_xi);
+                    prev_valley_x = cat_element(prev_valley_x, prev_min_index);
+                elseif ratio > threshold_ratio
+                    if debug
+                        fprintf("x = %f, y = %f, prev_min_x = %f, prev_min_y = %f, ratio = %f, interval_max_x = %f,interval_max_y = %f, interval = %f\n", maxima_xi/fs, y(maxima_xi), prev_min_index/fs, y(prev_min_index), ratio, interval_max_x / fs, interval_max_y, abs(interval_max_x - maxima_xi) / fs);
+                    end
+                end
+            else 
+
+            end
+        else
+            % 没有极小值，这是第一个极大值
+            if y(maxima_xi) >= interval_max_y
+                peak_x = cat_element(peak_x, maxima_xi);
+            else
+                if debug
+                    fprintf("no prev_min: x = %f, y = %f, interval_max_x = %f,interval_max_y = %f, interval = %f\n", maxima_xi/fs, y(maxima_xi), interval_max_x / fs, interval_max_y, abs(interval_max_x - maxima_xi) / fs);
+                end
+            end
+        end
+    end
+    % 再加上末尾的最低点
+    [~, min_idx] = min(y(maxima_x(end):end));
+    min_idx = maxima_x(end) - 1 + min_idx;
+    prev_valley_x = cat_element(prev_valley_x, min_idx(1));
+end
+
+function y = cat_element(list, x)
+    if isempty(list)
+        y = x;
+    else
+        y = [list, x];
+    end
 end

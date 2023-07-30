@@ -28,8 +28,8 @@ function result = get_dfh(amp, sample_freq, tone_mapping, overlap_ratio, base_to
     result = [];
     loop = 1:length(tone);
     % 循环迭代
+    overlap_last = 0;
     for i = loop
-        overlap_last = 0;
         % 调用 gen_tune 函数
         [local_result, overlap] = gen_tune(tone(i), beat(i), amp, sample_freq, tone_mapping, overlap_ratio, base_tone_freq, beat_time);
         % 将结果的首尾相加，中间拼接
