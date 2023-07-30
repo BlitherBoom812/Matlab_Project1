@@ -1,22 +1,22 @@
-clear;
-close all;
-clc;
+function play_dfh()
+    sample_freq = 16e3;
+    % 1 = F
+    base_tone_freq = 349.23;
+    % beat_time = 0.5, or BPM = 120
+    beat_time = 0.5;
+    amp = 1;
+    % 将唱名映射至以2^(1/12)为底的指数, 1对应指数为1
+    tone_mapping = [0, 2, 4, 5, 7, 9, 11];
+    overlap_ratio = 0.15/0.95;
+    
+    music = get_dfh(amp, sample_freq, tone_mapping, overlap_ratio, base_tone_freq, beat_time);
+    
+    sound(music, sample_freq);
+    plot(music);
+    xlabel("时间/s");
+    ylabel('幅度');
+end
 
-
-sample_freq = 16e3;
-% 1 = F
-base_tone_freq = 349.23;
-% beat_time = 0.5, or BPM = 120
-beat_time = 0.5;
-amp = 1;
-% 将唱名映射至以2^(1/12)为底的指数, 1对应指数为1
-tone_mapping = [0, 2, 4, 5, 7, 9, 11];
-overlap_ratio = 0.15/0.95;
-
-music = get_dfh(amp, sample_freq, tone_mapping, overlap_ratio, base_tone_freq, beat_time);
-
-sound(music, sample_freq);
-plot(music);
 
 function result = get_dfh(amp, sample_freq, tone_mapping, overlap_ratio, base_tone_freq, beat_time)
     

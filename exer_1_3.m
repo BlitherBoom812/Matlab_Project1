@@ -37,7 +37,7 @@ function result = get_dfh()
     % 初始化空数组用于存储结果
     result = [];
     loop = 1:length(tone);
-    % loop = 1:2;
+    overlap_last = 0;
     % 循环迭代
     for i = loop
         % 调用 gen_tune 函数
@@ -48,8 +48,9 @@ function result = get_dfh()
             result = local_result;
         else
             % 非第一次迭代，将上一次结果的末尾与当前结果的开头相加，并将结果添加到结果数组
-            result = [result(1:end-overlap), (result(end-overlap+1:end) + local_result(1:overlap)), local_result(overlap+1:end)];
+            result = [result(1:end-overlap_last), (result(end-overlap_last+1:end) + local_result(1:overlap_last)), local_result(overlap_last+1:end)];
         end
+        overlap_last = overlap;
     end
     
     % sound(result);

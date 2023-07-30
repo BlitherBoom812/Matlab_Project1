@@ -45,7 +45,7 @@ try
         tone = fmt(valleys(i):valleys(i + 1));
         tone = tone(1:round(length(tone) * 0.8));
         tone = tone .* gausswin(length(tone));
-        for j = 1:10
+        for j = 1:5
             tone = [tone;tone];
         end
         % 频域变换（只取正值）
@@ -98,7 +98,7 @@ try
                 max_harmonic_idx = start - 1 + max_harmonic_idx;
                 % 归一化
                 max_harmonic_amp = max_harmonic_amp / Tone(base_freq_idx);
-                if (max_harmonic_amp > 0.05)
+                if (max_harmonic_amp > 0.01)
                     harmonic_amps = [harmonic_amps, max_harmonic_amp];
                     harmonic_idxs = [harmonic_idxs, max_harmonic_idx];
                     harmonic_mults = [harmonic_mults, j];
@@ -139,7 +139,7 @@ try
         waitbar(i/length(peaks), h, sprintf('分析音调... %d%%', round(i/length(peaks) * 100)));
         subplot(5, 6, i);
         plot(f, Tone);
-        set(gca, 'FontSize', 5); % 设置当前坐标轴的字体大小为12
+        set(gca, 'FontSize', 5); % 设置当前坐标轴的字体大小为5
         title(['Beat ', num2str(i), info]);
         xlabel('freq/Hz', 'FontSize', 5);
         ylabel('Amp', 'FontSize', 5);

@@ -107,8 +107,8 @@ function result = play_single(tone, beat, amp, sample_freq, tone_mapping, overla
         else
             % 非第一次迭代，将上一次结果的末尾与当前结果的开头相加，并将结果添加到结果数组
             result = [result(1:end-overlap_last), (result(end-overlap_last+1:end) + local_result(1:overlap_last)), local_result(overlap_last+1:end)];
-            overlap_last = overlap;
         end
+        overlap_last = overlap;
     end
 end
 
