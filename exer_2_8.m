@@ -33,9 +33,7 @@ title('1000 periods');
 
 [W, f] = findpeaks(W3, freq);
 
-analyze(W3, freq);
-
-% 
+% 分析得到：
 % 基频：329.40Hz,音调：e1。
 % 谐波分量有
 % 

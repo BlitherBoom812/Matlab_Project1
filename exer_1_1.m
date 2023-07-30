@@ -31,13 +31,3 @@ function y = gen_tune_from_freq_width(freq, width)
     t = 0:time_step:width;
     y = amp * sin(2 * pi * freq * t);
 end
-
-function [freq, width] = trans_freq_width(tone, beat)
-    global base_tone_freq;
-    global beat_time;
-    global tone_mapping;
-    remain = mod(tone, 7);
-    exponent = tone_mapping(remain) + (tone - remain)/7 * 12;
-    freq = base_tone_freq * (2^((exponent - 1)/12));
-    width = beat * beat_time;
-end
